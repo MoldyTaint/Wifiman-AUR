@@ -1,0 +1,38 @@
+name: Publish to AUR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'PKGBUILD'
+      - '.SRCINFO'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate SSH key in GitHub Actions
+        if: ${{ !secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          ssh-keygen -t ed25519 -C "github-actions-aur" -f ~/.ssh/aur_key -N ""
+          echo "::warning::SSH key generated! Add this public key to AUR:"
+          cat ~/.ssh/aur_key.pub
+          echo "::warning::Then add the private key to GitHub Secrets as AUR_SSH_PRIVATE_KEY"
+          cat ~/.ssh/aur_key
+      
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3.0.1
+        with:
+          pkgname: wifiman-desktop-bin
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: ${{ github.event.head_commit.message }}
+          ssh_keyscan_types: rsa,ecdsa,ed25519

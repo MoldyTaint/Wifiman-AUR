@@ -22,34 +22,47 @@ jobs:
       - name: Check for new version
         id: version_check
         run: |
-          # Download the latest .deb package headers to check version
-          LATEST_URL="https://desktop.wifiman.com/"
-          
-          # Try to find the latest version by checking common version patterns
-          # Method 1: Try fetching the download page
           echo "Checking for latest version..."
           
           # Get current version from PKGBUILD
           CURRENT_VERSION=$(grep "^pkgver=" PKGBUILD | cut -d'=' -f2)
           echo "Current version: $CURRENT_VERSION"
           
-          # Try to download the .deb and check if it's newer
-          # We'll check versions 1.2.8 through 1.3.9 to find the latest
-          FOUND_VERSION="$CURRENT_VERSION"
+          # Parse current version
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
           
-          for major in 1 2; do
-            for minor in {0..9}; do
-              for patch in {0..20}; do
-                TEST_VERSION="${major}.${minor}.${patch}"
+          # Try incrementing patch, then minor, then major to find newer versions
+          FOUND_VERSION="$CURRENT_VERSION"
+          NEW_VERSION_FOUND=false
+          
+          # Check up to 20 patch versions ahead
+          for ((p=patch+1; p<=patch+20; p++)); do
+            TEST_VERSION="${major}.${minor}.${p}"
+            TEST_URL="https://desktop.wifiman.com/wifiman-desktop-${TEST_VERSION}-amd64.deb"
+            
+            if curl --output /dev/null --silent --head --fail "$TEST_URL"; then
+              echo "Found version: $TEST_VERSION"
+              FOUND_VERSION="$TEST_VERSION"
+              NEW_VERSION_FOUND=true
+            fi
+          done
+          
+          # Check next minor version if no patch updates found
+          if [ "$NEW_VERSION_FOUND" = false ]; then
+            for ((m=minor+1; m<=minor+3; m++)); do
+              for p in 0 1 2 3 4 5; do
+                TEST_VERSION="${major}.${m}.${p}"
                 TEST_URL="https://desktop.wifiman.com/wifiman-desktop-${TEST_VERSION}-amd64.deb"
                 
                 if curl --output /dev/null --silent --head --fail "$TEST_URL"; then
                   echo "Found version: $TEST_VERSION"
                   FOUND_VERSION="$TEST_VERSION"
+                  NEW_VERSION_FOUND=true
+                  break 2
                 fi
               done
             done
-          done
+          fi
           
           echo "Latest found version: $FOUND_VERSION"
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT

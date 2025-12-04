@@ -1,4 +1,4 @@
-# Maintainer: Your Name <your.email@example.com>
+# Maintainer: MoldyTaint <MoldyTaint@protonmail.com>
 
 pkgname=wifiman-desktop-bin
 pkgver=1.2.8

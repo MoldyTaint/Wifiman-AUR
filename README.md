@@ -23,7 +23,7 @@ makepkg -si
 ### From this repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/MoldyTaint/Wifiman-AUR.git
 cd Wifiman-AUR
 makepkg -si
 ```

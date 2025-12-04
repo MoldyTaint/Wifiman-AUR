@@ -77,3 +77,4 @@ This PKGBUILD and packaging scripts are released to the public domain.
 ## Contributing
 
 Contributions are welcome! Please open an issue or pull request if you find bugs or have improvements.
+

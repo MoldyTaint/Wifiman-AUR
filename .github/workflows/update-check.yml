@@ -1,0 +1,98 @@
+name: Check for WiFiMan Desktop Updates
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+      
+      - name: Check for new version
+        id: version_check
+        run: |
+          # Download the latest .deb package headers to check version
+          LATEST_URL="https://desktop.wifiman.com/"
+          
+          # Try to find the latest version by checking common version patterns
+          # Method 1: Try fetching the download page
+          echo "Checking for latest version..."
+          
+          # Get current version from PKGBUILD
+          CURRENT_VERSION=$(grep "^pkgver=" PKGBUILD | cut -d'=' -f2)
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Try to download the .deb and check if it's newer
+          # We'll check versions 1.2.8 through 1.3.9 to find the latest
+          FOUND_VERSION="$CURRENT_VERSION"
+          
+          for major in 1 2; do
+            for minor in {0..9}; do
+              for patch in {0..20}; do
+                TEST_VERSION="${major}.${minor}.${patch}"
+                TEST_URL="https://desktop.wifiman.com/wifiman-desktop-${TEST_VERSION}-amd64.deb"
+                
+                if curl --output /dev/null --silent --head --fail "$TEST_URL"; then
+                  echo "Found version: $TEST_VERSION"
+                  FOUND_VERSION="$TEST_VERSION"
+                fi
+              done
+            done
+          done
+          
+          echo "Latest found version: $FOUND_VERSION"
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "latest_version=$FOUND_VERSION" >> $GITHUB_OUTPUT
+          
+          if [ "$FOUND_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "new_version_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_version_available=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update PKGBUILD
+        if: steps.version_check.outputs.new_version_available == 'true'
+        run: |
+          NEW_VERSION="${{ steps.version_check.outputs.latest_version }}"
+          
+          # Download new .deb to calculate checksum
+          curl -L -o "wifiman-desktop-${NEW_VERSION}-amd64.deb" \
+            "https://desktop.wifiman.com/wifiman-desktop-${NEW_VERSION}-amd64.deb"
+          
+          NEW_SHA256=$(sha256sum "wifiman-desktop-${NEW_VERSION}-amd64.deb" | cut -d' ' -f1)
+          
+          # Update version in PKGBUILD
+          sed -i "s/^pkgver=.*/pkgver=${NEW_VERSION}/" PKGBUILD
+          
+          # Reset pkgrel to 1 for new version
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          
+          # Update checksum
+          sed -i "s/^sha256sums=.*/sha256sums=('${NEW_SHA256}')/" PKGBUILD
+          
+          # Regenerate .SRCINFO
+          docker run --rm -v "$PWD:/pkg" archlinux:latest /bin/bash -c \
+            "pacman -Sy --noconfirm binutils fakeroot && cd /pkg && makepkg --printsrcinfo > .SRCINFO"
+          
+          echo "Updated to version ${NEW_VERSION}"
+          echo "New SHA256: ${NEW_SHA256}"
+      
+      - name: Commit and push changes
+        if: steps.version_check.outputs.new_version_available == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to version ${{ steps.version_check.outputs.latest_version }}"
+          git push

@@ -1,0 +1,22 @@
+# Build artifacts
+*.tar.gz
+*.tar.xz
+*.tar.zst
+*.deb
+pkg/
+src/
+temp_extract/
+
+# Package files
+wifiman-desktop-bin-*.pkg.tar.*
+wifiman-desktop-*.deb
+
+# Makepkg logs
+*.log
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

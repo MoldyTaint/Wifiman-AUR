@@ -26,5 +26,6 @@ jobs:
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: ${{ github.event.head_commit.message }}
+          commit_message: "Initial commit: WiFiMan Desktop v1.2.8"
           ssh_keyscan_types: rsa,ecdsa,ed25519
+          allow_empty_commits: true

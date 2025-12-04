@@ -60,59 +60,7 @@ This repository includes a GitHub Actions workflow that:
 3. Regenerates .SRCINFO
 4. Commits and pushes changes
 
-The workflow runs daily at 00:00 UTC and can also be triggered manually.
-
-## Publishing to AUR
-
-To publish this package to the AUR:
-
-1. **Create an AUR account** at https://aur.archlinux.org/register/
-
-2. **Set up SSH key** for AUR:
-   ```bash
-   ssh-keygen -t ed25519 -C "your.email@example.com"
-   # Add the public key to your AUR account settings
-   ```
-
-3. **Initialize AUR git remote**:
-   ```bash
-   git remote add aur ssh://aur@aur.archlinux.org/wifiman-desktop-bin.git
-   ```
-
-4. **Push to AUR**:
-   ```bash
-   git push aur main
-   ```
-
-5. **Update PKGBUILD maintainer info**:
-   Edit the first line of PKGBUILD with your name and email.
-
-## Updating the Package
-
-When a new version is released:
-
-1. Update `pkgver` in PKGBUILD
-2. Download new .deb and calculate checksum:
-   ```bash
-   sha256sum wifiman-desktop-<version>-amd64.deb
-   ```
-3. Update `sha256sums` in PKGBUILD
-4. Reset `pkgrel` to 1
-5. Regenerate .SRCINFO:
-   ```bash
-   makepkg --printsrcinfo > .SRCINFO
-   ```
-6. Test build:
-   ```bash
-   makepkg -sf
-   ```
-7. Commit and push:
-   ```bash
-   git add PKGBUILD .SRCINFO
-   git commit -m "Update to version <version>"
-   git push
-   git push aur main
-   ```
+The workflow runs daily at 00:00 UTC and can also be triggered manually from the Actions tab.
 
 ## License
 
@@ -125,7 +73,6 @@ This PKGBUILD and packaging scripts are released to the public domain.
 
 - [Official WiFiMan Desktop](https://desktop.wifiman.com/)
 - [Ubiquiti](https://ui.com/)
-- [AUR Package Guidelines](https://wiki.archlinux.org/title/AUR_submission_guidelines)
 
 ## Contributing
 
